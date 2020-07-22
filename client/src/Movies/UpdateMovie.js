@@ -1,21 +1,38 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation, useParams } from 'react-router-dom'
+import { useLocation, useParams, useHistory } from 'react-router-dom'
 import axios from 'axios'
 
 const initialForm = {
-    name:'',
+    title:'',
     director:'',
     metascore:''
 }
 
-const UpdateMovie = () => {
+const UpdateMovie = props => {
     const [ form, setForm ] = useState(initialForm)
     const { location } = useLocation()
-    const { params } = useParams()
+    const params = useParams()
+    const { push } = useHistory()
+
     const handleForm = e => {
         setForm({...form, 
             [e.target.name]:e.target.value
         })
+    }
+    const handleSubmit = e => {
+        e.preventDefault()
+        axios
+            .put(`http://localhost:5000/api/movies/${form.id}`, form)
+            .then(() => {
+                axios
+                    .get("http://localhost:5000/api/movies")
+                    .then(res => {
+                        props.setMovieList(res.data)
+                        push(`/movies/${form.id}`)
+                    })
+                    .catch(err => console.log(err.response));
+            })
+            .catch(err => console.log(err))
     }
 
     useEffect(() => {
@@ -24,7 +41,7 @@ const UpdateMovie = () => {
         }else{
             axios
                 .get(`http://localhost:5000/api/movies/${params.id}`)
-                .then(res => console.log(res))
+                .then(res => setForm(res.data))        
                 .catch(err => console.log(err))
         }
     },[])
@@ -32,12 +49,12 @@ const UpdateMovie = () => {
     return(
         <div className='form-container'>
             <h1>- Update a Movie -</h1>
-            <form className='update-form'>
+            <form onSubmit={handleSubmit} className='update-form'>
                 <label>Title: &nbsp;
                     <input
                     type='text'
-                    name='name'
-                    value={form.name}
+                    name='title'
+                    value={form.title}
                     onChange={handleForm}
                     />
                 </label>
